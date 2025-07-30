@@ -176,7 +176,10 @@ merged_SteepSleep <-
 ```
 
 
-  **3. The next focus of the analysis addresses the question posed in the ASK phase of the business task:** “What are the daily usage trends and patterns of Bellabeat smart device users based on the available data?”
+  **3. Focus of the Analysis** 
+
+  This section addresses the question posed in the ASK phase of the business task:
+  > "What are the daily usage trends and patterns of Bellabeat smart device users based on the available data?"
 
   To answer this, the following key variables will be analyzed:
 
@@ -184,9 +187,7 @@ merged_SteepSleep <-
 
 - User behavior patterns – to uncover recurring usage habits, such as peak activity hours, consistency of sleep, and preferred activity types.
 
-The key variables to be analyzed are categorized into two main areas: Physical Activity and Sleep Patterns.
-
-**Physical Activity (Source: dailyActivity_merged, hourlySteps_merged)**
+**Physical Activity (Source: `dailyActivity_merged`, `hourlySteps_merged`)**
 
 - TotalSteps – reflects overall daily activity intensity.
 - VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes – indicate different levels of activity types.
@@ -194,8 +195,105 @@ The key variables to be analyzed are categorized into two main areas: Physical A
 - Calories – represents total energy output.
 - ActivityDate – used to analyze daily trends (e.g., from April 12 to May 12, 2016).
 
-**Sleep Patterns (Source: sleepDay)**
+**Sleep Patterns (Source: `sleepDay`)**
 
 - TotalMinutesAsleep – indicates sleep quality.
 - TotalTimeInBed – used to assess sleep efficiency.
 - SleepDay – provides the date for analyzing sleep trends.
+
+**4. Analysis Step: Which Day Has the Most Steps?**
+
+Let’s find out on which day people took the most steps.
+```
+dailyActivity_merged |>
+  mutate(Day = weekdays(as.Date(ActivityDate))) |>
+  group_by(Day) |>
+  summarise(AverageSteps = mean(TotalSteps)) |>
+  arrange(desc(AverageSteps))
+```
+<img width="567" height="522" alt="image" src="https://github.com/user-attachments/assets/1769260c-1c07-4625-a7c0-8a96e13d4a17" />
+
+Users tend to be more physically active on Tuesdays and Saturdays, while Sunday is the least active day. This suggests that physical activity peaks at the beginning and end of the week, whereas weekends especially sunday are commonly used for complete rest by most users.
+
+**5. Then, at what time do people take the most steps?**
+```
+hour_step <- hourlySteps_merged |> 
+  mutate(Hour = hour(ActivityHour)) |> 
+  group_by(Hour) |> 
+  summarise(avg_steps = mean(StepTotal)) %>%
+  arrange(desc(avg_steps))
+```
+<img width="525" height="487" alt="image" src="https://github.com/user-attachments/assets/7b45225a-4cdb-4788-b0c9-9d75da0e5ba7" />
+
+Step counts begin to increase in the morning starting at 6 AM, peak around 6 PM and 7 PM, then gradually decline into the night. This likely reflects users engaging in workouts, evening walks, or other late-day activities after work
+
+**6. Correlation between totalstep and calories
+```
+# Create scatterplots
+ggplot(dailyActivity_merged, aes(x = TotalSteps, y = Calories)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  labs(title = "Correlation between totalstep and calories",
+       x = "Total Steps", y = "Calories")
+
+# Check the R-squared value
+model <- lm(Calories ~ TotalSteps, data = dailyActivity_merged)
+summary(model)$r.squared
+```
+<img width="524" height="519" alt="image" src="https://github.com/user-attachments/assets/1619f080-6af8-41f9-a45c-1f775de58fda" />
+This correlation has an R² value of 0.34, indicating a moderate positive relationship between step count and calories burned — the more steps taken, the more calories tend to be burned. However, since the R² is relatively low, there is still considerable variation in calories burned for the same number of steps, suggesting that other factors, such as activity intensity, also play a significant role.
+
+
+**7. Activity Intensity Analysis: how each activity intensity level contributes to the total minutes**
+
+We’ll examine the proportion of time spent in each activity intensity category Sedentary, Lightly Active, Fairly Active, and Very Active by visualizing their contribution to the total minutes using a pie chart
+
+```
+#Calculate total minutes per user
+dailyActivity_merged <- dailyActivity_merged |> 
+  mutate(total_minutes = VeryActiveMinutes +
+           FairlyActiveMinutes +
+           LightlyActiveMinutes +
+           SedentaryMinutes)
+
+#Calculate the percentage of each activity type
+sedentary_percentage <- sum(dailyActivity_merged$SedentaryMinutes) / sum(dailyActivity_merged$total_minutes) * 100
+lightly_percentage   <- sum(dailyActivity_merged$LightlyActiveMinutes) / sum(dailyActivity_merged$total_minutes) * 100
+fairly_percentage    <- sum(dailyActivity_merged$FairlyActiveMinutes) / sum(dailyActivity_merged$total_minutes) * 100
+active_percentage    <- sum(dailyActivity_merged$VeryActiveMinutes) / sum(dailyActivity_merged$total_minutes) * 100
+
+#Store the results in a data frame
+percentage <- data.frame(
+  level = c("Sedentary", "Lightly", "Fairly", "Very Active"),
+  minutes = c(sedentary_percentage, lightly_percentage, fairly_percentage, active_percentage)
+)
+
+#Create the pie chart
+plot_ly(percentage,
+        labels = ~level,
+        values = ~minutes,
+        type = "pie",
+        textinfo = "label+percent")
+```
+
+<img width="569" height="470" alt="image" src="https://github.com/user-attachments/assets/aeb683c7-03ab-4d3f-a37e-ef78f672dee6" />
+
+This insight indicates that most users tend to have a less active lifestyle, with very little time spent on more intense physical activities.
+
+**8. Since people spend most of their time being sedentary, we will identify which day of the week has the highest sedentary time.**
+```
+#Calculate the average sleep duration per day
+sleepday_new <- sleepday_new_test |>
+  mutate(Day = factor(Day, c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))) |> 
+  group_by(Day) |> 
+  summarise(AvgSleep = mean(TotalMinutesAsleep))
+
+#Create the graph
+sleepday_new |> 
+  ggplot(aes(x = Day, y = AvgSleep)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = mean(sleepday_new$AvgSleep),
+             linetype = "dashed", color = "red", size = 1)
+```
+<img width="466" height="432" alt="image" src="https://github.com/user-attachments/assets/bf761641-f8be-4677-bd93-af45081cf56e" />
+Users appear to be the least active on Mondays and Tuesdays, showing higher sedentary time compared to other days. This may indicate that users' early-week activities are dominated by desk jobs or routines with low physical movement
