@@ -51,8 +51,151 @@ The dataset was collected in 2016, and since then, health habits, device usage p
 - 📉Cited (Low):
 The dataset was sourced from Amazon Mechanical Turk without clear documentation on who collected the data, how it was collected, or any official citation or publication. The absence of a verifiable source or proper citation undermines the credibility of the data and makes it difficult to validate or replicate the dataset for further analysis.
 
-## 2. Process
+## 3. Process
 
 For further analysys, is using rstudio.
 
+- Importing the dataset
+  
+I only used four datasets for this analysis because these files are the most relevant to the objective of analyzing users’ health behavior. The other files contain minute-level or second-level granular data, which are less aligned with the strategic focus of this analysis.
+```
+dailyactivity <- read_csv("../input/fitbit/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv")
+sleep <- read_csv("../input/fitbit/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+weight <- read_csv("../input/fitbit/Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+step_hour <- read_csv("../input/fitbit/Fitabase Data 4.12.16-5.12.16/hourlySteps_merged.csv")
+```
 
+- Exploring and Cleaning the Dataset
+
+After uploading the dataset, the next step is to explore and clean the data to ensure it's ready for analysis.
+
+1. Initial Exploration
+I started by calling the skimr library to get a comprehensive overview of the dataset:
+
+`library(skimr)
+`
+
+Then, I used the `skim_without_charts()` function to review each file. This helped identify:
+
+The distribution of values in each column
+
+Any missing values
+
+Presence of whitespace
+
+Column names and data types
+
+>Note: Since all rows in the dataset are numeric, spelling checks were not applicable.
+
+```
+skim_without_charts(dailyactivity)
+skim_without_charts(sleepday)
+skim_without_charts(weight)
+skim_without_charts(step_hour)
+```
+
+2. Outlier Check
+
+In the `dailyActivity_merged.csv` file, an unusually high value was found in the `TotalSteps` column. Upon closer inspection, this value was consistent with other activity-related columns such as `TotalDistance` and `TotalActiveMinutes`, which also showed high values. The value is considered a contextually valid extreme, not a data entry error. Therefore, it was retained in the dataset and not treated as an outlier to be removed.
+
+3. Inconsistent Date Format
+
+Another issue identified was inconsistent date formats across multiple files. The date columns were in `character` format and contained AM/PM strings. To standardize the date format, I converted it using the `lubridate` package:
+```
+library(lubridate)
+sleepDay_merged$SleepDay <- mdy_hms(sleepDay_merged$SleepDay)
+```
+
+4. To ensure the analysis focuses on relevant and representative data, the number of unique respondents in each dataset was checked using:
+```
+n_distinct(dailyactivity)
+n_distinct(sleepday)
+n_distinct(weight)
+n_distinct(step_hour)
+```
+The dataset contains 33 unique IDs in `dailyActivity`, 24 in `sleepDay`, 8 in `weightLogInfo`, and 33 in `hourlySteps`.
+Given that the weightLogInfo file only includes data from 8 users, the sample size is too small to support a meaningful or representative analysis.
+
+As a result, this file was excluded from the main analysis. The focus was directed toward other datasets dailyActivity, sleepDay, and step_hour which include a larger number of respondents and provide a more comprehensive view of user behavior.
+
+
+5. Removed duplicate entries using the following code:
+
+`dailyactivity <- dailyactivity[!duplicated(dailyactivity), ]`
+
+Now the datasets are ready to analyze
+
+## 4. Analyze
+
+**1. Exploration will be conducted using the summary() function to generate basic descriptive statistics.**
+```
+dailyActivity_merged |>
+select(TotalSteps,
+       TotalDistance,
+       VeryActiveMinutes,
+       FairlyActiveMinutes,
+       LightlyActiveMinutes,
+       SedentaryMinutes,
+       Calories) %>%
+  summary()
+
+hourlySteps_merged |>
+  select(ActivityHour,
+         StepTotal) %>%
+  summary()
+
+sleepDay_merged |> 
+  select(TotalSleepRecords,
+         TotalMinutesAsleep,
+         TotalTimeInBed) |> 
+  summary()
+
+weightLogInfo_merged |> 
+  select(WeightKg,
+         BMI) |> 
+  summary()
+```
+
+<img width="1036" height="560" alt="image" src="https://github.com/user-attachments/assets/1575737c-ba0e-4cf9-9942-3b1cca43fd4e" />
+
+Based on the descriptive analysis, users recorded an average of 7,638 daily steps—below the CDC recommendation of 10,000. The average distance traveled per day is 5.49 km, with a maximum of 28.03 km, indicating some highly active users. Light activity is the most common, averaging 192.8 minutes daily, compared to 13.56 minutes for moderate and 21 minutes for vigorous activity. Sedentary time is relatively high at 991 minutes (about 16.5 hours) per day, suggesting a largely inactive lifestyle. Average calories burned per day are 2,304, or around 97 per hour.
+
+Hourly step data spans from April 12 to May 12, 2016, with an average of 320 steps per hour, peaking at 10,554 in certain hours.
+
+Sleep data shows users typically sleep once per day, averaging 419 minutes (≈7 hours) of sleep and 458 minutes in bed, implying a gap between time in bed and actual sleep.
+
+For weight data, the average weight is 72.04 kg (range: 52.6–133.5 kg), and the average BMI is 25.19 borderline overweight with a maximum of 47.54, indicating severe obesity.
+
+  **2. The dailyActivity and sleepDay datasets were merged**
+   
+Due to their shared daily structure, with matching Id and date columns—allowing analysis of the relationship between physical activity and sleep duration. Other files, such as hourlySteps, were not merged because of their finer hourly granularity, which would require additional aggregation. Meanwhile, weightLogInfo was excluded from the main analysis due to limited participants and inconsistent logging, making it less representative.
+```
+merged_SteepSleep <- 
+  inner_join(dailyActivity_merged, sleepday_new_test,
+             by = c("Id", "ActivityDate" = "SleepDay"))
+```
+
+
+  **3. The next focus of the analysis addresses the question posed in the ASK phase of the business task:** “What are the daily usage trends and patterns of Bellabeat smart device users based on the available data?”
+
+  To answer this, the following key variables will be analyzed:
+
+- Daily usage trends – to identify general activity levels and changes in user behavior over time.
+
+- User behavior patterns – to uncover recurring usage habits, such as peak activity hours, consistency of sleep, and preferred activity types.
+
+The key variables to be analyzed are categorized into two main areas: Physical Activity and Sleep Patterns.
+
+**Physical Activity (Source: dailyActivity_merged, hourlySteps_merged)**
+
+- TotalSteps – reflects overall daily activity intensity.
+- VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes – indicate different levels of activity types.
+- SedentaryMinutes – captures sedentary behavior or lack of movement.
+- Calories – represents total energy output.
+- ActivityDate – used to analyze daily trends (e.g., from April 12 to May 12, 2016).
+
+**Sleep Patterns (Source: sleepDay)**
+
+- TotalMinutesAsleep – indicates sleep quality.
+- TotalTimeInBed – used to assess sleep efficiency.
+- SleepDay – provides the date for analyzing sleep trends.
