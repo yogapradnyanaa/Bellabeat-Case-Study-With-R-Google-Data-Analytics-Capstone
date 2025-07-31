@@ -318,3 +318,72 @@ sleepday_new |>
 <img width="466" height="432" alt="image" src="https://github.com/user-attachments/assets/bf761641-f8be-4677-bd93-af45081cf56e" />
 
 Users appear to be the least active on Mondays and Tuesdays, showing higher sedentary time compared to other days. This may indicate that users' early-week activities are dominated by desk jobs or routines with low physical movement
+
+
+**10. Calculate daily sleep duration in minutes**
+```
+# Calculate the average sleep duration per day
+sleepday_new <- sleepday_new_test |>
+  mutate(Day = factor(Day, c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))) |> 
+  group_by(Day) |> 
+  summarise(AvgSleep = mean(TotalMinutesAsleep))
+
+# Graph
+sleepday_new |> 
+  ggplot(aes(x = Day, y = AvgSleep)) +
+  geom_col(fill = "steelblue") +
+  geom_hline(yintercept = mean(sleepday_new$AvgSleep),
+             linetype = "dashed", color = "red", size = 1)
+```
+<img width="438" height="400" alt="image" src="https://github.com/user-attachments/assets/1e4ddfda-4c69-4037-8eed-e0272dce0c02" />
+
+Users tend to sleep longer on Sundays, possibly because they don’t have to work or engage in strenuous activities that day, allowing them to rest more. In contrast, sleep duration is slightly shorter on weekdays, likely due to work demands or daily routines.
+
+
+**11. How about categorizing the sleep data into Weekdays and Weekends?**
+```
+sleepday_new_test |>
+  group_by(DayType = ifelse(Day  %in% c("Saturday", "Sunday"), "Weekend", "Weekday")) |> 
+  summarise(AvgSleep = mean(TotalMinutesAsleep)) |> 
+  arrange(desc(AvgSleep))
+```
+<img width="558" height="522" alt="image" src="https://github.com/user-attachments/assets/881a6358-215b-4ee0-af04-6ba89410150e" />
+
+The graph shows that the average sleep duration is higher on weekends compared to weekdays. This indicates that users tend to get less sleep during weekdays, possibly due to work routines or daily activities, and then try to compensate by sleeping longer on weekends.
+
+
+**12. How is the sleep efficiency?**
+```
+# Adding a sleep efficiency column
+sleepday_new_test <- sleepday_new_test |> 
+  mutate(SleepEfficiency = TotalMinutesAsleep / TotalTimeInBed * 100)
+
+# Grouping it into Weekend and Weekday
+sleepday_new_test |> 
+  mutate(DayType = ifelse(Day %in% c("Saturday", "Sunday"), "Weekend", "Weekday")) |>
+  group_by(DayType) |>
+  summarise(AverageEfficiency = mean(SleepEfficiency, na.rm = TRUE))
+```
+<img width="405" height="109" alt="image" src="https://github.com/user-attachments/assets/486b65d7-2f79-44ad-8faf-c117a1016705" />
+
+Interestingly, despite the difference in sleep duration between weekdays and weekends, users' sleep efficiency remains relatively consistent at above 91% on both types of days.
+
+
+**13. How often do users log sleep more than once per day?**
+```
+# How many user IDs have logged sleep more than once in a day?
+sleepDay_merged |>
+  filter(TotalSleepRecords > 1) |>
+  distinct(Id) |> 
+  nrow()
+
+# How many total occurrences of sleeping more than once?
+sleepDay_merged |>
+  filter(TotalSleepRecords > 1) |>
+  nrow()
+```
+
+There were **46 instances** of users recording more than one sleep session in a day, involving **12 unique users**. This suggests that a small group tends to have fragmented sleep patterns, such as naps or interrupted sleep. While not dominant, this may reflect specific lifestyles like shift work, fatigue, or mild sleep disorders. This insight could help Bellabeat develop features to track unconventional sleep patterns and offer more personalized recommendations.
+
+
+## 6. Share
