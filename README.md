@@ -158,15 +158,16 @@ weightLogInfo_merged |>
 
 <img width="1036" height="560" alt="image" src="https://github.com/user-attachments/assets/1575737c-ba0e-4cf9-9942-3b1cca43fd4e" />
 
-Based on the descriptive analysis, users recorded an average of 7,638 daily steps—below the CDC recommendation of 10,000. The average distance traveled per day is 5.49 km, with a maximum of 28.03 km, indicating some highly active users. Light activity is the most common, averaging 192.8 minutes daily, compared to 13.56 minutes for moderate and 21 minutes for vigorous activity. Sedentary time is relatively high at 991 minutes (about 16.5 hours) per day, suggesting a largely inactive lifestyle. Average calories burned per day are 2,304, or around 97 per hour.
+- Based on the descriptive analysis, users recorded an average of 7,638 daily steps—below the CDC recommendation of 10,000. The average distance traveled per day is 5.49 km, with a maximum of 28.03 km, indicating some highly active users. Light activity is the most common, averaging 192.8 minutes daily, compared to 13.56 minutes for moderate and 21 minutes for vigorous activity. Sedentary time is relatively high at 991 minutes (about 16.5 hours) per day, suggesting a largely inactive lifestyle. Average calories burned per day are 2,304, or around 97 per hour.
 
-Hourly step data spans from April 12 to May 12, 2016, with an average of 320 steps per hour, peaking at 10,554 in certain hours.
+- Hourly step data spans from April 12 to May 12, 2016, with an average of 320 steps per hour, peaking at 10,554 in certain hours.
 
-Sleep data shows users typically sleep once per day, averaging 419 minutes (≈7 hours) of sleep and 458 minutes in bed, implying a gap between time in bed and actual sleep.
+- Sleep data shows users typically sleep once per day, averaging 419 minutes (≈7 hours) of sleep and 458 minutes in bed, implying a gap between time in bed and actual sleep.
 
-For weight data, the average weight is 72.04 kg (range: 52.6–133.5 kg), and the average BMI is 25.19 borderline overweight with a maximum of 47.54, indicating severe obesity.
+- For weight data, the average weight is 72.04 kg (range: 52.6–133.5 kg), and the average BMI is 25.19 borderline overweight with a maximum of 47.54, indicating severe obesity.
 
-  **2. The dailyActivity and sleepDay datasets were merged**
+
+**2. The dailyActivity and sleepDay datasets were merged**
    
 Due to their shared daily structure, with matching Id and date columns—allowing analysis of the relationship between physical activity and sleep duration. Other files, such as hourlySteps, were not merged because of their finer hourly granularity, which would require additional aggregation. Meanwhile, weightLogInfo was excluded from the main analysis due to limited participants and inconsistent logging, making it less representative.
 ```
@@ -176,7 +177,7 @@ merged_SteepSleep <-
 ```
 
 
-  **3. Focus of the Analysis** 
+**3. Focus of the Analysis** 
 
   This section addresses the question posed in the ASK phase of the business task:
   > "What are the daily usage trends and patterns of Bellabeat smart device users based on the available data?"
@@ -191,7 +192,6 @@ merged_SteepSleep <-
 
 - TotalSteps – reflects overall daily activity intensity.
 - VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes – indicate different levels of activity types.
-- SedentaryMinutes – captures sedentary behavior or lack of movement.
 - Calories – represents total energy output.
 - ActivityDate – used to analyze daily trends (e.g., from April 12 to May 12, 2016).
 
@@ -200,6 +200,7 @@ merged_SteepSleep <-
 - TotalMinutesAsleep – indicates sleep quality.
 - TotalTimeInBed – used to assess sleep efficiency.
 - SleepDay – provides the date for analyzing sleep trends.
+
 
 **4. Analysis Step: Which Day Has the Most Steps?**
 
@@ -215,6 +216,7 @@ dailyActivity_merged |>
 
 Users tend to be more physically active on Tuesdays and Saturdays, while Sunday is the least active day. This suggests that physical activity peaks at the beginning and end of the week, whereas weekends especially sunday are commonly used for complete rest by most users.
 
+
 **5. Then, at what time do people take the most steps?**
 ```
 hour_step <- hourlySteps_merged |> 
@@ -227,7 +229,8 @@ hour_step <- hourlySteps_merged |>
 
 Step counts begin to increase in the morning starting at 6 AM, peak around 6 PM and 7 PM, then gradually decline into the night. This likely reflects users engaging in workouts, evening walks, or other late-day activities after work
 
-**6. Correlation between totalstep and calories
+
+**6. Correlation between totalstep and calories**
 ```
 # Create scatterplots
 ggplot(dailyActivity_merged, aes(x = TotalSteps, y = Calories)) +
@@ -236,15 +239,30 @@ ggplot(dailyActivity_merged, aes(x = TotalSteps, y = Calories)) +
   labs(title = "Correlation between totalstep and calories",
        x = "Total Steps", y = "Calories")
 
-# Check the R-squared value
-model <- lm(Calories ~ TotalSteps, data = dailyActivity_merged)
-summary(model)$r.squared
+# Check the r Value
+cor(dailyActivity_merged$TotalSteps, dailyActivity_merged$Calories)
 ```
 <img width="524" height="519" alt="image" src="https://github.com/user-attachments/assets/1619f080-6af8-41f9-a45c-1f775de58fda" />
-This correlation has an R² value of 0.34, indicating a moderate positive relationship between step count and calories burned — the more steps taken, the more calories tend to be burned. However, since the R² is relatively low, there is still considerable variation in calories burned for the same number of steps, suggesting that other factors, such as activity intensity, also play a significant role.
+
+The correlation coefficient between total steps and calories burned is r = 0.59, indicating a moderate positive relationship as step count increases, calories burned also tend to increase.
 
 
-**7. Activity Intensity Analysis: how each activity intensity level contributes to the total minutes**
+**7. Multiple Linear Regression to Predict Calories Burned**
+
+Multiple linear regression was conducted to examine the combined effect of several activity variables on calories burned
+```
+model3 <- lm(Calories ~ TotalDistance + VeryActiveMinutes + LightlyActiveMinutes + FairlyActiveMinutes + SedentaryMinutes, data=dailyActivity_merged)
+summary(model3)
+```
+<img width="565" height="242" alt="image" src="https://github.com/user-attachments/assets/d1d0b426-1a85-456c-909e-a32760dc6f1c" />
+
+- The regression model yields an Adjusted R-squared of 0.4883, indicating that approximately 48.8% of the variation in calories burned is explained by the included variables. The remaining variation may be due to unobserved factors such as weight, age, or body composition, which are not available in the weightLogInfo dataset.
+
+- TotalSteps was excluded due to high correlation with TotalDistance to avoid multicollinearity.
+
+- Significance tests show that VeryActiveMinutes and TotalDistance are the most significant predictors of calories burned, highlighting the importance of intensity and distance. LightlyActiveMinutes and SedentaryMinutes also have an effect, though smaller. FairlyActiveMinutes is not statistically significant, indicating an inconsistent contribution to calorie burn.
+
+**8. Activity Intensity Analysis: how each activity intensity level contributes to the total minutes**
 
 We’ll examine the proportion of time spent in each activity intensity category Sedentary, Lightly Active, Fairly Active, and Very Active by visualizing their contribution to the total minutes using a pie chart
 
@@ -280,7 +298,8 @@ plot_ly(percentage,
 
 This insight indicates that most users tend to have a less active lifestyle, with very little time spent on more intense physical activities.
 
-**8. Since people spend most of their time being sedentary, we will identify which day of the week has the highest sedentary time.**
+
+**9. Since people spend most of their time being sedentary, we will identify which day of the week has the highest sedentary time.**
 ```
 #Calculate the average sleep duration per day
 sleepday_new <- sleepday_new_test |>
@@ -295,5 +314,7 @@ sleepday_new |>
   geom_hline(yintercept = mean(sleepday_new$AvgSleep),
              linetype = "dashed", color = "red", size = 1)
 ```
+
 <img width="466" height="432" alt="image" src="https://github.com/user-attachments/assets/bf761641-f8be-4677-bd93-af45081cf56e" />
+
 Users appear to be the least active on Mondays and Tuesdays, showing higher sedentary time compared to other days. This may indicate that users' early-week activities are dominated by desk jobs or routines with low physical movement
