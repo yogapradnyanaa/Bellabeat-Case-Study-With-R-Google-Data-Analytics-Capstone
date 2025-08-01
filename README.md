@@ -386,4 +386,45 @@ sleepDay_merged |>
 There were **46 instances** of users recording more than one sleep session in a day, involving **12 unique users**. This suggests that a small group tends to have fragmented sleep patterns, such as naps or interrupted sleep. While not dominant, this may reflect specific lifestyles like shift work, fatigue, or mild sleep disorders. This insight could help Bellabeat develop features to track unconventional sleep patterns and offer more personalized recommendations.
 
 
-## 6. Share
+## 5. Share
+
+### This dashboard presents key insights visually to support more intuitive data driven decision making.
+
+📊[Bellabeat Case Study: User Behavior Dashboard](https://public.tableau.com/app/profile/yoga.pradnyana.putra/viz/BellabeatCaseStudyUserBehaviorDashboard/Dashboard1)
+<img width="1907" height="1042" alt="image" src="https://github.com/user-attachments/assets/11dfaea7-e3b3-4ba2-ae3c-239347f92063" />
+
+
+## 6. Act
+
+### Summarize Key Insights
+
+Based on the analysis:
+
+- The majority of users lead a sedentary lifestyle, spending 80% of their time inactive.
+
+- Physical activity peaks between 6 PM and 7 PM, especially on Tuesdays and Saturdays.
+
+- Sleep duration is longer on weekends, but sleep efficiency remains consistently high (above 91%) across all days.
+
+- A small group of users exhibits fragmented sleep patterns, such as taking naps or sleeping more than once a day.
+
+- The most influential factors in calorie expenditure are VeryActiveMinutes and TotalDistance.
+
+### Strategic Recommendation
+
+The following actions are recommended:
+
+- Personalized Movement Reminders: Implement a feature that sends periodic notifications during sedentary hours (e.g., every 2 hours) to encourage movement.
+
+- Evening Workout Content Launch: Since user activity peaks in the evening, launch guided workouts or meditation sessions scheduled between 6–7 PM.
+
+- Sleep Fragmentation Tracking: Develop a feature to track and visualize fragmented sleep patterns (e.g., naps), and offer tailored sleep improvement tips.
+
+- Personalized Activity Goals: Use behavioral insights to customize daily calorie and step targets, emphasizing high-impact activities like intense walking or active minutes.
+
+### Action Prioritization
+
+<img width="940" height="531" alt="image" src="https://github.com/user-attachments/assets/4703f3be-1fe1-4dfc-87a2-93a00ff6c691" />
+
+⚠️ Disclaimer: The estimation of effort levels is based on personal assumptions and general development knowledge. Actual implementation complexity may vary depending on system architecture and available resources.
+
